@@ -48,6 +48,14 @@ impl Board {
             println!("");
         }
     }
+
+    pub fn possible_moves(&self) {
+        // Easiest way to do this is probably to just take each letter and 
+        // iterate through its possible placements, including a non-placement
+        // to get a huge set of nonsense moves and then check rules after
+        // (as opposed to the smarted way of building valid moves out
+        // by choosing a direction)
+    }
 }
 
 fn is_dl(i: usize, j: usize) -> bool {
