@@ -82,11 +82,11 @@ impl Board {
     }
 
     pub fn possible_moves(&self) {
-        // Easiest way to do this is probably to just take each letter and 
-        // iterate through its possible placements, including a non-placement
-        // to get a huge set of nonsense moves and then check rules after
-        // (as opposed to the smarted way of building valid moves out
-        // by choosing a direction)
+        // Iterate through each row and put the permutations in it
+        // Need to do each column as well which is not a particularly
+        // efficient thing to do.
+        //
+        // Not sure how to track this
     }
 
 }
