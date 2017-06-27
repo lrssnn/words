@@ -16,7 +16,9 @@ const TW : [(usize, usize); 8] = [(0, 2), (0, 8), (2, 0), (2, 10),
 
 pub struct Board {
     rows: Vec<Vec<char>>,
+    size: usize,
 }
+
 
 impl Board {
 
@@ -34,7 +36,8 @@ impl Board {
                 vec!['_','_','_','_','_','_','_','_','_','_','_'],
                 vec!['_','_','_','_','_','_','_','_','_','_','_'],
                 vec!['_','_','_','_','_','_','_','_','_','_','_'],
-            ]
+            ],
+            size: 11,
         }
     }
 
@@ -51,11 +54,26 @@ impl Board {
         }
 
         Board {
-           rows: rows
+           size: rows.len(),
+           rows: rows,
         }
     }
 
     pub fn print(&self) {
+        if self.size == 11 {
+            self.print_full();
+        } else {
+            for row in &self.rows {
+                for c in row {
+                    print!("_{}_", c);
+                }
+                println!();
+            }
+        }
+    }
+
+    // Print with special tile indicators, only useful for 11x11
+    fn print_full(&self) {
         for (i, row) in self.rows.iter().enumerate() {
             for (j, &c) in row.iter().enumerate() {
                 if c == '_' {
@@ -87,6 +105,10 @@ impl Board {
         // efficient thing to do.
         //
         // Not sure how to track this
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
     }
 
 }
