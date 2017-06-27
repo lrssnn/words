@@ -3,6 +3,6 @@ mod board;
 use board::Board;
 
 fn main() {
-   let board = Board::new();
+   let board = Board::new_from_file("board.dat");
    board.print();
 }
