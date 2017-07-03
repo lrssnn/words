@@ -11,21 +11,93 @@ const TL : [(usize, usize); 8] = [(0, 0), (0, 10), (3, 3), (3, 7),
 const TW : [(usize, usize); 8] = [(0, 2), (0, 8), (2, 0), (2, 10),
                                   (8, 0), (8, 10), (10, 2), (10, 8)];
 
+
 pub struct Board {
-    rows: [[char; 11]; 11],
+    rows: [[Letter; 11]; 11],
+}
+
+#[derive(Copy, Clone)]
+pub struct Letter {
+    letter: Option<char>, // The letter
+    scored: bool,         // Letter is new and should be scored
+}
+
+impl Letter {
+    
+    pub fn new(letter: char) -> Letter {
+        Letter {
+            letter: Some(letter),
+            scored: true,
+        }
+    }
+
+    pub fn new_unscored(letter: char) -> Letter {
+        Letter {
+            letter: Some(letter),
+            scored: false,
+        }
+    }
+
+    pub fn blank() -> Letter {
+        Letter {
+            letter: None,
+            scored: false,
+        }
+    }
+
+    pub fn score(&self) -> usize {
+        let letter = match self.letter {
+            Some(c) => c,
+            None    => return 0,
+        };
+
+        match letter {
+            'a' => 1,
+            'b' => 4,
+            'c' => 4,
+            'd' => 2,
+            'e' => 1,
+            'f' => 4,
+            'g' => 3,
+            'h' => 3,
+            'i' => 1,
+            'j' => 10,
+            'k' => 5,
+            'l' => 2,
+            'm' => 4,
+            'n' => 2,
+            'o' => 1,
+            'p' => 4,
+            'q' => 10,
+            'r' => 1,
+            's' => 1,
+            't' => 1,
+            'u' => 2,
+            'v' => 5,
+            'w' => 4,
+            'x' => 8,
+            'y' => 3,
+            'z' => 10,
+            _  => 0,
+        }
+    }
 }
 
 impl Board {
 
     pub fn new() -> Board {
         Board {
-            rows: [['_'; 11]; 11]
+            rows: [[Letter::blank(); 11]; 11]
         }
     }
 
     pub fn print(&self) {
         for (i, row) in self.rows.iter().enumerate() {
-            for (j, &c) in row.iter().enumerate() {
+            for (j, &letter) in row.iter().enumerate() {
+                let c = match letter.letter {
+                    Some(c) => c,
+                    None    => '_',
+                };
                 if c == '_' {
                     // Check for multiplier tiles
                     if i == 5 && j == 5 {
