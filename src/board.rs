@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Read;
+
 const DL : [(usize, usize); 12] = [(2, 2), (2, 4), (2, 6), (2, 8),
                                   (4, 2), (4, 8), (6, 2), (6, 8),
                                   (8, 2), (8, 4), (8, 6), (8, 8)];
@@ -83,6 +86,7 @@ impl Letter {
     }
 }
 
+
 impl Board {
 
     pub fn new() -> Board {
@@ -91,6 +95,7 @@ impl Board {
         }
     }
 
+    // Print with special tile indicators, only useful for 11x11
     pub fn print(&self) {
         for (i, row) in self.rows.iter().enumerate() {
             for (j, &letter) in row.iter().enumerate() {
@@ -122,12 +127,13 @@ impl Board {
     }
 
     pub fn possible_moves(&self) {
-        // Easiest way to do this is probably to just take each letter and 
-        // iterate through its possible placements, including a non-placement
-        // to get a huge set of nonsense moves and then check rules after
-        // (as opposed to the smarted way of building valid moves out
-        // by choosing a direction)
+        // Iterate through each row and put the permutations in it
+        // Need to do each column as well which is not a particularly
+        // efficient thing to do.
+        //
+        // Not sure how to track this
     }
+
 }
 
 fn is_dl(i: usize, j: usize) -> bool {
