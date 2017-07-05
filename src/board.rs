@@ -214,6 +214,43 @@ pub fn choose_n(letters: &Vec<char>, n: usize) -> Vec<Vec<char>> {
     result
 }
 
+// Returns every permutation (ordering) of the given list
+// Removes duplicate orderings i.e. [a, b, b] will return
+//    [a, b, b], [b, a, b] and [b, b, a] only
+pub fn permutations(list: &Vec<char>) -> Vec<Vec<char>> {
+    let len = list.len();
+    // Base case
+    // perms length 1 or 0: input is the only output
+    if len <= 1 {
+        return vec![list.clone()];
+    }
+
+    // perms length 2: input and input swapped is the output
+    // This isn't strictly necessary but is a small optimisation
+    if len == 2 {
+        return vec![list.clone(), vec![list[1], list[0]]];
+    }
+
+    // Calculate permutations recursively by taking each element of the list
+    // as the first element and appending each permutation of the list without
+    // that element
+    let mut result = vec![];
+    for first in 0..len {
+        let mut sublist = list.clone();
+        let l = sublist.remove(first);
+        
+        for mut p in permutations(&sublist) {
+            let mut res = vec![l];
+            res.append(&mut p);
+            result.push(res);
+        }
+    }
+    // Dedup only considers adjacent elements so sort first
+    result.sort();
+    result.dedup();
+    result
+}
+
 fn is_dl(i: usize, j: usize) -> bool {
     for tup in DL.iter() {
         let &(row, col) = tup;
