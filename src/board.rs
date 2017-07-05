@@ -49,6 +49,7 @@ impl Letter {
     }
 
     pub fn score(&self) -> usize {
+
         let letter = match self.letter {
             Some(c) => c,
             None    => return 0,
@@ -126,14 +127,91 @@ impl Board {
         }
     }
 
-    pub fn possible_moves(&self) {
+    pub fn get_best_move(&self, letters: &Vec<char>) -> Board {
+        let options = self.possible_moves(letters);
+
+        Board::new()
+    }
+
+    // Returns a list of valid moves and their scores
+    pub fn possible_moves(&self, letters: &Vec<char>) -> Vec<(Board, usize)> {
         // Iterate through each row and put the permutations in it
         // Need to do each column as well which is not a particularly
         // efficient thing to do.
-        //
         // Not sure how to track this
+        
+        for row in self.rows.iter() {
+            // We need to choose:
+            //   1. How many letters to put down
+            //   2. Which letters to use
+            //   3. Which order to use
+            //   4. Where to start
+            // With those in mind we should have every possible move?
+            //
+            // So lets start with one letter words which will just be putting them adjacent
+            //  to letters
+            
+            /*
+            for word_length in 1..letters.len() {
+               for letter_selection in choose_n(letters, word_length) {
+                   for perm in permutations(letter_selection) {
+                       for start_cell in start_positions(row, word_length) {
+                           println!("{}: {}", perm, start_cell);
+                       }
+                   }
+               }
+            }
+            */
+        }
+        vec![]
     }
 
+}
+
+// Return every possible sublist of letters length n (maintaining order).
+// i.e. [a, b, c] choose 2 will return [a, b], [a, c] and [b, c], and not [c, b] etc. 
+// Recursive function
+pub fn choose_n(letters: &Vec<char>, n: usize) -> Vec<Vec<char>> {
+    let len = letters.len();
+
+    // Base cases
+    // Invalid call
+    if n > len {
+        println!("Invalid call to choose_n");
+        return vec![];
+    }
+
+    // n choose n: the input is the only output
+    if n == len {
+        return vec![letters.clone()];
+    }
+
+    // n choose 1: each element of the input is an output
+    if n == 1 {
+       let mut res = vec![];
+       for l in letters {
+           res.push(vec![l.clone()]);
+       }
+       return res;
+    }
+
+    // Build the sublists recursively:
+    let mut result = vec![];
+    // Take each element in the list as the first element in a set of sublists
+    // The last 'first' element is the one that leaves n - 1 elements after it
+    for first in (0 .. len - (n - 1)) {
+        let l = letters[first];
+        // Create the sublist that goes from the element after 'first' to the end
+        let mut sublist = letters.clone().get(first+1..len).unwrap().to_vec();
+        // For each way to choose n - 1 from that sublist, put 'first' at the start and
+        // add to the result
+        for mut r in choose_n(&sublist, n - 1) {
+            let mut res = vec![l];
+            res.append(&mut r);
+            result.push(res);
+        }
+    } 
+    result
 }
 
 fn is_dl(i: usize, j: usize) -> bool {
