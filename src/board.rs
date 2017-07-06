@@ -133,6 +133,14 @@ impl Board {
             println!("");
         }
     }
+    
+    pub fn place(&mut self, i: usize, j: usize, letter: char) {
+        let l = Letter::new(letter);
+        if self.rows[i][j].letter.is_some() {
+            println!("WARNING: Placing tile over existing tile");
+        }
+        self.rows[i][j] = l;
+    }
 
     pub fn get_best_move(&self, letters: &Vec<char>) -> Board {
         let options = self.possible_moves(letters);
@@ -158,17 +166,19 @@ impl Board {
             // So lets start with one letter words which will just be putting them adjacent
             //  to letters
             
-            /*
             for word_length in 1..letters.len() {
-               for letter_selection in choose_n(letters, word_length) {
-                   for perm in permutations(letter_selection) {
+                println!("Word Length: {}", word_length);
+               for letter_selection in choose_n(&letters, word_length) {
+                   println!("Letters: {:?}", letter_selection);
+                   for perm in permutations(&letter_selection) {
+                       println!("Perm: {:?}", perm);
                        for start_cell in start_positions(row, word_length) {
-                           println!("{}: {}", perm, start_cell);
+                           print!("{} ", start_cell);
                        }
+                       println!("");
                    }
                }
             }
-            */
         }
         vec![]
     }
