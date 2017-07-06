@@ -1,21 +1,20 @@
 mod board;
 
 use board::Board;
+use board::Letter;
 
 fn main() {
-    let letters = vec!['a', 'c', 'c'];
-    let mut list = board::permutations(&letters);
-    for l in &list {
-        println!("{:?}", l);
+    let board = Board::new();
+    let mut row = board.rows[0];
+    print_row(&row);
+    row[7] = Letter::new('s');
+    print_row(&row);
+    println!("{:?}", board::start_positions(&row, 3));
+}
+
+fn print_row(row: &[Letter]) {
+    for l in row {
+        print!("{}", l);
     }
-    println!("\n");
-    list.sort();
-    for l in &list {
-        println!("{:?}", l);
-    }
-    println!("\n");
-    list.dedup();
-    for l in &list {
-        println!("{:?}", l);
-    }
+    println!("");
 }

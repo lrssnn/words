@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::fmt;
 
 const DL : [(usize, usize); 12] = [(2, 2), (2, 4), (2, 6), (2, 8),
                                   (4, 2), (4, 8), (6, 2), (6, 8),
@@ -16,13 +17,19 @@ const TW : [(usize, usize); 8] = [(0, 2), (0, 8), (2, 0), (2, 10),
 
 
 pub struct Board {
-    rows: [[Letter; 11]; 11],
+    pub rows: [[Letter; 11]; 11],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Letter {
     letter: Option<char>, // The letter
     scored: bool,         // Letter is new and should be scored
+}
+
+impl fmt::Display for Letter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, ".{}.", self.letter.unwrap_or('_'))
+    }
 }
 
 impl Letter {
@@ -249,6 +256,39 @@ pub fn permutations(list: &Vec<char>) -> Vec<Vec<char>> {
     result.sort();
     result.dedup();
     result
+}
+
+// Return a list of possible start positions to place 'word_size' letters in sequence into 
+// 'row'.
+// Tile placement is considered 1 by 1 from left to right, skipping over tiles that are occupied,
+// so word_size = 3 can still yield longer words than 3 based on tiles already in the board
+pub fn start_positions(row: &[Letter], word_size: usize) -> Vec<usize> {
+    let mut res = vec![];
+    for start in 0 .. (row.len() - word_size)+1 {
+        // Can't start on an occupied cell
+        if row[start].letter.is_some() {
+            continue;
+        }
+
+        // 1 letter words don't need any more checks
+        if word_size <= 1 {
+            res.push(start);
+            continue;
+        }
+
+        // Count unoccupied cells after start cell
+        let mut blanks = 1;
+        for i in start + 1 .. row.len() {
+            if row[i].letter.is_none() {
+                blanks += 1;
+                if blanks == word_size {
+                    res.push(start);
+                    continue;
+                }
+            }
+        }
+    }
+    res
 }
 
 fn is_dl(i: usize, j: usize) -> bool {
