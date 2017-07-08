@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::fmt;
+use std::clone::Clone;
 
 const DL : [(usize, usize); 12] = [(2, 2), (2, 4), (2, 6), (2, 8),
                                   (4, 2), (4, 8), (6, 2), (6, 8),
@@ -15,7 +16,7 @@ const TL : [(usize, usize); 8] = [(0, 0), (0, 10), (3, 3), (3, 7),
 const TW : [(usize, usize); 8] = [(0, 2), (0, 8), (2, 0), (2, 10),
                                   (8, 0), (8, 10), (10, 2), (10, 8)];
 
-
+#[derive(Copy, Clone)]
 pub struct Board {
     pub rows: [[Letter; 11]; 11],
 }
@@ -127,7 +128,11 @@ impl Board {
                         print!("_{}_", ' ');
                     }
                 } else {
-                    print!("_{}_", c);
+                    if letter.scored {
+                        print!("*{}*", c);
+                    } else {
+                        print!("_{}_", c);
+                    }
                 }
             }
             println!("");
@@ -136,6 +141,14 @@ impl Board {
     
     pub fn place(&mut self, i: usize, j: usize, letter: char) {
         let l = Letter::new(letter);
+        if self.rows[i][j].letter.is_some() {
+            println!("WARNING: Placing tile over existing tile");
+        }
+        self.rows[i][j] = l;
+    }
+
+    pub fn place_unscored(&mut self, i: usize, j: usize, letter: char) {
+        let l = Letter::new_unscored(letter);
         if self.rows[i][j].letter.is_some() {
             println!("WARNING: Placing tile over existing tile");
         }
@@ -155,7 +168,7 @@ impl Board {
         // efficient thing to do.
         // Not sure how to track this
         
-        for row in self.rows.iter() {
+        for (row_num, row) in self.rows.iter().enumerate() {
             // We need to choose:
             //   1. How many letters to put down
             //   2. Which letters to use
@@ -173,9 +186,13 @@ impl Board {
                    for perm in permutations(&letter_selection) {
                        println!("Perm: {:?}", perm);
                        for start_cell in start_positions(row, word_length) {
-                           print!("{} ", start_cell);
+                           let (opt, legal) = self.put_word(&perm, row_num, start_cell);
+                           if legal {
+                               opt.print();
+                               println!("");
+                           }
                        }
-                       println!("");
+                       println!("----");
                    }
                }
             }
@@ -183,6 +200,74 @@ impl Board {
         vec![]
     }
 
+    fn put_word(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
+        let mut legal = false;
+        let mut board = self.clone();
+        let mut i = start_cell;
+        // Check for a word left of the word beginning
+        if i > 0 {
+            let mut j = 1;
+            loop {
+                if board.rows[row][i - j].letter.is_some() {
+                    legal = true;
+                    board.rows[row][i - j].scored = true;
+                    j += 1;
+                    if j >= i {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        for letter in letters {
+            // Skip letters in the row (but mark to be scored)
+            while board.rows[row][i].letter.is_some() {
+                legal = true;
+                board.rows[row][i].scored = true;
+                i += 1;
+            }
+            // Place the letter
+            board.rows[row][i].letter = Some(letter.clone());
+            board.rows[row][i].scored = true;
+
+            // Check for abutting words up and down
+            // Checking up is uglier to avoid usize subtraction overflow
+            if row > 0 {
+                let mut j = 1;
+                loop {
+                    if board.rows[row-j][i].letter.is_some() {
+                        legal = true;
+                        board.rows[row-j][i].scored = true;
+                        j += 1;
+                        if j > row {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            let mut j = 1;
+            while row+j < board.rows.len() && board.rows[row+j][i].letter.is_some() {
+                legal = true;
+                board.rows[row-j][i].scored = true;
+                j += 1;
+            }
+
+            i += 1;
+        }
+
+        // Check for a word right of the end
+        let mut j = 1;
+        while i + j < board.rows[row].len() && board.rows[row][i + j].letter.is_some() {
+            legal = true;
+            board.rows[row][i+j].scored = true;
+            j += 1;
+        }
+        (board, legal)
+    }
 }
 
 // Return every possible sublist of letters length n (maintaining order).

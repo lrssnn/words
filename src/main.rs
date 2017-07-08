@@ -5,7 +5,8 @@ use board::Letter;
 
 fn main() {
     let mut board = Board::new();
-    board.place(4, 5, 'c');
+    board.place_unscored(4, 5, 'c');
+    board.place_unscored(10, 5, 'x');
     board.print();
     
     for (b, score) in board.possible_moves(&vec!['a', 'b', 'c']) {
