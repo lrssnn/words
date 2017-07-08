@@ -25,6 +25,10 @@ pub struct Board {
 pub struct Letter {
     letter: Option<char>, // The letter
     scored: bool,         // Letter is new and should be scored
+    double: bool,         // Letter should be scored double
+    triple: bool,         // Letter should be scored triple
+    dw:     bool,         // Letter placed on double word tile
+    tw:     bool,         // Letter placed on triple word tile
 }
 
 impl fmt::Display for Letter {
@@ -39,6 +43,10 @@ impl Letter {
         Letter {
             letter: Some(letter),
             scored: true,
+            double: false,
+            triple: false,
+            dw:     false,
+            tw:     false,
         }
     }
 
@@ -46,6 +54,10 @@ impl Letter {
         Letter {
             letter: Some(letter),
             scored: false,
+            double: false,
+            triple: false,
+            dw:     false,
+            tw:     false,
         }
     }
 
@@ -53,7 +65,15 @@ impl Letter {
         Letter {
             letter: None,
             scored: false,
+            double: false,
+            triple: false,
+            dw:     false,
+            tw:     false,
         }
+    }
+
+    pub fn is_blank(&self) -> bool {
+        self.letter.is_none()
     }
 
     pub fn score(&self) -> usize {
@@ -114,7 +134,6 @@ impl Board {
                 };
                 if c == '_' {
                     // Check for multiplier tiles
-                    /*
                     if i == 5 && j == 5 {
                         print!("_*_");
                     } else if is_dl(i, j) {
@@ -128,8 +147,7 @@ impl Board {
                     } else {
                         print!("_{}_", ' ');
                     }
-                    */
-                    print!("_{}_", '_');
+                    //print!("_{}_", '_');
                 } else {
                     if letter.scored {
                         print!("*{}*", c);
@@ -200,9 +218,11 @@ impl Board {
                     for (col_num, col) in cols_to_rows(&self.rows).iter().enumerate() {
                         println!("----");
                         for start_cell in start_positions(col, word_length) {
-                            let (opt, legal) = self.put_word_v(&perm, col_num, start_cell);
+                            let (mut opt, legal) = self.put_word_v(&perm, col_num, start_cell);
                             if legal {
                                 opt.print();
+                                let score = opt.score();
+                                println!("Score: {}", score);
                                 println!("");
                             }
                         }
@@ -211,6 +231,114 @@ impl Board {
             }
         }
         vec![]
+    }
+
+    pub fn score(&mut self) -> usize {
+
+        let mut score = 0;
+        let mut word_score = 0;
+        let mut doubled = 1;
+        let mut tripled = 1;
+
+        for row in self.rows.iter_mut() {
+            for letter in row {
+                if letter.is_blank() {
+                    // Double out
+                    while doubled > 1 {
+                        word_score *= 2;
+                        doubled    -= 1;
+                    }
+                    // Triple out
+                    while tripled > 1 {
+                        word_score *= 3;
+                        tripled    -= 1;
+                    }
+                    // Add to total
+                    score += word_score;
+                    word_score = 0;
+                } else if letter.scored {
+                    letter.scored = false;
+                    let mut letter_score = letter.score();
+                    if letter.double { letter_score *= 2;}
+                    if letter.triple { letter_score *= 3;}
+                    if letter.dw { 
+                        letter.dw = false;
+                        doubled += 1;
+                    }
+                    if letter.tw {
+                        letter.tw = false;
+                        tripled += 1;
+                    }
+                    
+                    word_score += letter_score;
+                }
+            }
+            // Cash out words that hit the edge
+            // Double out
+            while doubled > 1 {
+                word_score *= 2;
+                doubled    -= 1;
+            }
+            // Triple out
+            while tripled > 1 {
+                word_score *= 3;
+                tripled    -= 1;
+            }
+            // Add to total
+            score += word_score;
+            word_score = 0;
+        }
+
+        // Do the same thing for columns
+        for row in cols_to_rows(&self.rows).iter_mut() {
+            for letter in row {
+                if letter.is_blank() {
+                    // Double out
+                    while doubled > 1 {
+                        word_score *= 2;
+                        doubled    -= 1;
+                    }
+                    // Triple out
+                    while tripled > 1 {
+                        word_score *= 3;
+                        tripled    -= 1;
+                    }
+                    // Add to total
+                    score += word_score;
+                    word_score = 0;
+                } else if letter.scored {
+                    letter.scored = false;
+                    let mut letter_score = letter.score();
+                    if letter.double { letter_score *= 2;}
+                    if letter.triple { letter_score *= 3;}
+                    if letter.dw { 
+                        letter.dw = false;
+                        doubled += 1;
+                    }
+                    if letter.tw {
+                        letter.tw = false;
+                        tripled += 1;
+                    }
+                    
+                    word_score += letter_score;
+                }
+            }
+            // Cash out words that hit the edge
+            // Double out
+            while doubled > 1 {
+                word_score *= 2;
+                doubled    -= 1;
+            }
+            // Triple out
+            while tripled > 1 {
+                word_score *= 3;
+                tripled    -= 1;
+            }
+            // Add to total
+            score += word_score;
+            word_score = 0;
+        }
+        score
     }
 
     fn put_word_v(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
@@ -251,8 +379,17 @@ impl Board {
                 i += 1;
             }
             // Place the letter
-            board.rows[row][i].letter = Some(letter.clone());
-            board.rows[row][i].scored = true;
+            let mut input = board.rows[row][i];
+            input.letter = Some(letter.clone());
+            input.scored = true;
+
+            // Check for multipliers
+            if is_dl(row, i) { input.double = true };
+            if is_dw(row, i) { input.dw     = true };
+            if is_tl(row, i) { input.triple = true };
+            if is_tw(row, i) { input.tw     = true };
+
+            board.rows[row][i] = input;
 
             // Check for abutting words up and down
             // Checking up is uglier to avoid usize subtraction overflow
