@@ -1,5 +1,7 @@
 mod board;
 
+use std::cmp::Ordering;
+
 use board::Board;
 use board::Letter;
 
@@ -10,15 +12,18 @@ fn main() {
     board.place_unscored(8, 8, 'x');
     board.print();
     
-    for (b, score) in board.possible_moves(&vec!['a', 'b', 'c']) {
-        b.print();
+    let mut moves = board.possible_moves(&vec!['a', 'b', 'c']);
+    moves.sort_by(sort_moves);
+
+    for &(board, score) in moves.iter().rev().take(5) {
+        board.print();
+        println!("Score: {}\n", score);
     }
 
 }
 
-fn print_row(row: &[Letter]) {
-    for l in row {
-        print!("{}", l);
-    }
-    println!("");
+fn sort_moves(a: &(Board, usize), b: &(Board, usize)) -> Ordering {
+    a.1.cmp(&b.1)
 }
+    
+

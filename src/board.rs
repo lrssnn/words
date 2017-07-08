@@ -193,6 +193,7 @@ impl Board {
         //
         // So lets start with one letter words which will just be putting them adjacent
         //  to letters
+        let mut result = vec![];
         for word_length in 1..letters.len() + 1 {
             println!("Word Length: {}", word_length);
             for letter_selection in choose_n(&letters, word_length) {
@@ -203,10 +204,10 @@ impl Board {
                     for (row_num, row) in self.rows.iter().enumerate() {
                         println!("----");
                         for start_cell in start_positions(row, word_length) {
-                            let (opt, legal) = self.put_word(&perm, row_num, start_cell);
+                            let (mut opt, legal) = self.put_word(&perm, row_num, start_cell);
                             if legal {
-                                opt.print();
-                                println!("");
+                                let score = opt.score();
+                                result.push((opt, score));
                             }
                         }
                     }
@@ -220,17 +221,15 @@ impl Board {
                         for start_cell in start_positions(col, word_length) {
                             let (mut opt, legal) = self.put_word_v(&perm, col_num, start_cell);
                             if legal {
-                                opt.print();
                                 let score = opt.score();
-                                println!("Score: {}", score);
-                                println!("");
+                                result.push((opt, score));
                             }
                         }
                     }
                 }
             }
         }
-        vec![]
+        result
     }
 
     pub fn score(&mut self) -> usize {
