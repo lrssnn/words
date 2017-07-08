@@ -114,6 +114,7 @@ impl Board {
                 };
                 if c == '_' {
                     // Check for multiplier tiles
+                    /*
                     if i == 5 && j == 5 {
                         print!("_*_");
                     } else if is_dl(i, j) {
@@ -127,6 +128,8 @@ impl Board {
                     } else {
                         print!("_{}_", ' ');
                     }
+                    */
+                    print!("_{}_", '_');
                 } else {
                     if letter.scored {
                         print!("*{}*", c);
@@ -163,38 +166,32 @@ impl Board {
 
     // Returns a list of valid moves and their scores
     pub fn possible_moves(&self, letters: &Vec<char>) -> Vec<(Board, usize)> {
-        // Iterate through each row and put the permutations in it
-        // Need to do each column as well which is not a particularly
-        // efficient thing to do.
-        // Not sure how to track this
-        
-        for (row_num, row) in self.rows.iter().enumerate() {
-            // We need to choose:
-            //   1. How many letters to put down
-            //   2. Which letters to use
-            //   3. Which order to use
-            //   4. Where to start
-            // With those in mind we should have every possible move?
-            //
-            // So lets start with one letter words which will just be putting them adjacent
-            //  to letters
-            
-            for word_length in 1..letters.len() {
-                println!("Word Length: {}", word_length);
-               for letter_selection in choose_n(&letters, word_length) {
-                   println!("Letters: {:?}", letter_selection);
-                   for perm in permutations(&letter_selection) {
-                       println!("Perm: {:?}", perm);
-                       for start_cell in start_positions(row, word_length) {
-                           let (opt, legal) = self.put_word(&perm, row_num, start_cell);
-                           if legal {
-                               opt.print();
-                               println!("");
-                           }
-                       }
-                       println!("----");
-                   }
-               }
+        // We need to choose:
+        //   1. How many letters to put down
+        //   2. Which letters to use
+        //   3. Which order to use
+        //   4. Where to start
+        // With those in mind we should have every possible move?
+        //
+        // So lets start with one letter words which will just be putting them adjacent
+        //  to letters
+        for word_length in 1..letters.len() + 1 {
+            println!("Word Length: {}", word_length);
+            for letter_selection in choose_n(&letters, word_length) {
+                println!("Letters: {:?}", letter_selection);
+                for perm in permutations(&letter_selection) {
+                    println!("Perm: {:?}", perm);
+                    for (row_num, row) in self.rows.iter().enumerate() {
+                        println!("----");
+                        for start_cell in start_positions(row, word_length) {
+                            let (opt, legal) = self.put_word(&perm, row_num, start_cell);
+                            if legal {
+                                opt.print();
+                                println!("");
+                            }
+                        }
+                    }
+                }
             }
         }
         vec![]
@@ -209,6 +206,7 @@ impl Board {
             let mut j = 1;
             loop {
                 if board.rows[row][i - j].letter.is_some() {
+                    if !legal {println!("Legalising on pre-word")}
                     legal = true;
                     board.rows[row][i - j].scored = true;
                     j += 1;
@@ -223,6 +221,7 @@ impl Board {
         for letter in letters {
             // Skip letters in the row (but mark to be scored)
             while board.rows[row][i].letter.is_some() {
+                if !legal {println!("Legalising on mid-word")}
                 legal = true;
                 board.rows[row][i].scored = true;
                 i += 1;
@@ -237,6 +236,7 @@ impl Board {
                 let mut j = 1;
                 loop {
                     if board.rows[row-j][i].letter.is_some() {
+                        if !legal {println!("Legalising on up-word")}
                         legal = true;
                         board.rows[row-j][i].scored = true;
                         j += 1;
@@ -251,8 +251,9 @@ impl Board {
 
             let mut j = 1;
             while row+j < board.rows.len() && board.rows[row+j][i].letter.is_some() {
+                if !legal {println!("Legalising on down-word")}
                 legal = true;
-                board.rows[row-j][i].scored = true;
+                board.rows[row+j][i].scored = true;
                 j += 1;
             }
 
@@ -260,8 +261,9 @@ impl Board {
         }
 
         // Check for a word right of the end
-        let mut j = 1;
+        let mut j = 0;
         while i + j < board.rows[row].len() && board.rows[row][i + j].letter.is_some() {
+            if !legal {println!("Legalising on post-word")}
             legal = true;
             board.rows[row][i+j].scored = true;
             j += 1;
