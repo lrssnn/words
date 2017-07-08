@@ -1,4 +1,14 @@
 [root]
 name = "words"
 version = "0.1.0"
+dependencies = [
+ "hunspell 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
+[[package]]
+name = "hunspell"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[metadata]
+"checksum hunspell 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "92a1481919add41a5c256027b4dfb54566c6a93e398223ee069336c6cc34e0b1"

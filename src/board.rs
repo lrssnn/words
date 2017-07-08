@@ -4,6 +4,9 @@ use std::io::Read;
 use std::fmt;
 use std::clone::Clone;
 
+extern crate hunspell;
+use self::hunspell::Hunspell;
+
 const DL : [(usize, usize); 12] = [(2, 2), (2, 4), (2, 6), (2, 8),
                                   (4, 2), (4, 8), (6, 2), (6, 8),
                                   (8, 2), (8, 4), (8, 6), (8, 8)];
@@ -234,6 +237,9 @@ impl Board {
         let mut doubled = 1;
         let mut tripled = 1;
 
+        let spellcheck = Hunspell::new("en_GB.aff", "en_GB.dic");
+        let mut word = String::new();
+
         for row in &mut self.rows {
             for letter in row {
                 if letter.is_blank() {
@@ -250,9 +256,21 @@ impl Board {
                     // Add to total
                     score += word_score;
                     word_score = 0;
+
+                    // Spellcheck
+                    if word.len() > 1 {
+                        let valid = spellcheck.check(&word);
+                        println!("Spellchecking '{}': {}", word, valid);
+                        if !valid {
+                            return 0;
+                        }
+                        word = String::new();
+                    }
+
                 } else if letter.scored {
                     letter.scored = false;
                     let mut letter_score = letter.score();
+                    word.push(letter.letter.unwrap());
                     if letter.double { letter_score *= 2;}
                     if letter.triple { letter_score *= 3;}
                     if letter.dw { 
@@ -281,6 +299,15 @@ impl Board {
             // Add to total
             score += word_score;
             word_score = 0;
+
+            if word.len() > 1 {
+                let valid = spellcheck.check(&word);
+                println!("Spellchecking '{}': {}", word, valid);
+                if !valid {
+                    return 0;
+                }
+                word = String::new();
+            }
         }
 
         // Do the same thing for columns
@@ -352,7 +379,7 @@ impl Board {
             let mut j = 1;
             loop {
                 if board.rows[row][i - j].letter.is_some() {
-                    if !legal {println!("Legalising on pre-word")}
+                    //if !legal {println!("Legalising on pre-word")}
                     legal = true;
                     board.rows[row][i - j].scored = true;
                     j += 1;
@@ -367,7 +394,7 @@ impl Board {
         for letter in letters {
             // Skip letters in the row (but mark to be scored)
             while board.rows[row][i].letter.is_some() {
-                if !legal {println!("Legalising on mid-word")}
+                //if !legal {println!("Legalising on mid-word")}
                 legal = true;
                 board.rows[row][i].scored = true;
                 i += 1;
@@ -391,7 +418,7 @@ impl Board {
                 let mut j = 1;
                 loop {
                     if board.rows[row-j][i].letter.is_some() {
-                        if !legal {println!("Legalising on up-word")}
+                        //if !legal {println!("Legalising on up-word")}
                         legal = true;
                         board.rows[row-j][i].scored = true;
                         j += 1;
@@ -406,7 +433,7 @@ impl Board {
 
             let mut j = 1;
             while row+j < board.rows.len() && board.rows[row+j][i].letter.is_some() {
-                if !legal {println!("Legalising on down-word")}
+                //if !legal {println!("Legalising on down-word")}
                 legal = true;
                 board.rows[row+j][i].scored = true;
                 j += 1;
@@ -418,7 +445,7 @@ impl Board {
         // Check for a word right of the end
         let mut j = 0;
         while i + j < board.rows[row].len() && board.rows[row][i + j].letter.is_some() {
-            if !legal {println!("Legalising on post-word")}
+            //if !legal {println!("Legalising on post-word")}
             legal = true;
             board.rows[row][i+j].scored = true;
             j += 1;
