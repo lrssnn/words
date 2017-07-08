@@ -1,3 +1,4 @@
+#![allow(needless_range_loop)]
 use std::fs::File;
 use std::io::Read;
 use std::fmt;
@@ -176,12 +177,6 @@ impl Board {
         self.rows[i][j] = l;
     }
 
-    pub fn get_best_move(&self, letters: &Vec<char>) -> Board {
-        let options = self.possible_moves(letters);
-
-        Board::new()
-    }
-
     // Returns a list of valid moves and their scores
     pub fn possible_moves(&self, letters: &Vec<char>) -> Vec<(Board, usize)> {
         // We need to choose:
@@ -196,7 +191,7 @@ impl Board {
         let mut result = vec![];
         for word_length in 1..letters.len() + 1 {
             println!("Word Length: {}", word_length);
-            for letter_selection in choose_n(&letters, word_length) {
+            for letter_selection in choose_n(letters, word_length) {
                 println!("Letters: {:?}", letter_selection);
                 for perm in permutations(&letter_selection) {
                     println!("Perm: {:?}", perm);
@@ -239,7 +234,7 @@ impl Board {
         let mut doubled = 1;
         let mut tripled = 1;
 
-        for row in self.rows.iter_mut() {
+        for row in &mut self.rows {
             for letter in row {
                 if letter.is_blank() {
                     // Double out
@@ -289,7 +284,7 @@ impl Board {
         }
 
         // Do the same thing for columns
-        for row in cols_to_rows(&self.rows).iter_mut() {
+        for row in &mut cols_to_rows(&self.rows) {
             for letter in row {
                 if letter.is_blank() {
                     // Double out
@@ -341,7 +336,7 @@ impl Board {
     }
 
     fn put_word_v(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
-        let mut board = self.clone();
+        let mut board = *self;
         board.rows = cols_to_rows(&board.rows);
         let (mut res, legal) = board.put_word(letters, row, start_cell);
         res.rows = cols_to_rows(&res.rows);
@@ -350,7 +345,7 @@ impl Board {
 
     fn put_word(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
         let mut legal = false;
-        let mut board = self.clone();
+        let mut board = *self;
         let mut i = start_cell;
         // Check for a word left of the word beginning
         if i > 0 {
@@ -379,7 +374,7 @@ impl Board {
             }
             // Place the letter
             let mut input = board.rows[row][i];
-            input.letter = Some(letter.clone());
+            input.letter = Some(*letter);
             input.scored = true;
 
             // Check for multipliers
@@ -454,7 +449,7 @@ pub fn choose_n(letters: &Vec<char>, n: usize) -> Vec<Vec<char>> {
     if n == 1 {
        let mut res = vec![];
        for l in letters {
-           res.push(vec![l.clone()]);
+           res.push(vec![*l]);
        }
        return res;
     }
@@ -463,10 +458,10 @@ pub fn choose_n(letters: &Vec<char>, n: usize) -> Vec<Vec<char>> {
     let mut result = vec![];
     // Take each element in the list as the first element in a set of sublists
     // The last 'first' element is the one that leaves n - 1 elements after it
-    for first in (0 .. len - (n - 1)) {
+    for first in 0 .. len - (n - 1) {
         let l = letters[first];
         // Create the sublist that goes from the element after 'first' to the end
-        let mut sublist = letters.clone().get(first+1..len).unwrap().to_vec();
+        let sublist = letters.clone()[first+1..len].to_vec();
         // For each way to choose n - 1 from that sublist, put 'first' at the start and
         // add to the result
         for mut r in choose_n(&sublist, n - 1) {
@@ -549,7 +544,7 @@ pub fn start_positions(row: &[Letter], word_size: usize) -> Vec<usize> {
 }
 
 pub fn cols_to_rows(cols: &[[Letter; 11]; 11]) -> [[Letter; 11]; 11] {
-    let mut rows = cols.clone();
+    let mut rows = *cols;
 
     for i in 0 .. cols.len(){
         for j in 0 .. cols[i].len() {
@@ -561,41 +556,41 @@ pub fn cols_to_rows(cols: &[[Letter; 11]; 11]) -> [[Letter; 11]; 11] {
 
 
 fn is_dl(i: usize, j: usize) -> bool {
-    for tup in DL.iter() {
+    for tup in &DL {
         let &(row, col) = tup;
         if i == row && j == col {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn is_dw(i: usize, j: usize) -> bool {
-    for tup in DW.iter() {
+    for tup in &DW {
         let &(row, col) = tup;
         if i == row && j == col {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn is_tl(i: usize, j: usize) -> bool {
-    for tup in TL.iter() {
+    for tup in &TL {
         let &(row, col) = tup;
         if i == row && j == col {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn is_tw(i: usize, j: usize) -> bool {
-    for tup in TW.iter() {
+    for tup in &TW {
         let &(row, col) = tup;
         if i == row && j == col {
             return true;
         }
     }
-    return false;
+    false
 }

@@ -3,7 +3,6 @@ mod board;
 use std::cmp::Ordering;
 
 use board::Board;
-use board::Letter;
 
 fn main() {
     let mut board = Board::new();
