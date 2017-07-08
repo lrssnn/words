@@ -181,6 +181,7 @@ impl Board {
                 println!("Letters: {:?}", letter_selection);
                 for perm in permutations(&letter_selection) {
                     println!("Perm: {:?}", perm);
+                    // Here is where we want to look at both rows and columns
                     for (row_num, row) in self.rows.iter().enumerate() {
                         println!("----");
                         for start_cell in start_positions(row, word_length) {
@@ -191,10 +192,33 @@ impl Board {
                             }
                         }
                     }
+
+                    if word_length == 1 {
+                        continue;
+                    }
+
+                    for (col_num, col) in cols_to_rows(&self.rows).iter().enumerate() {
+                        println!("----");
+                        for start_cell in start_positions(col, word_length) {
+                            let (opt, legal) = self.put_word_v(&perm, col_num, start_cell);
+                            if legal {
+                                opt.print();
+                                println!("");
+                            }
+                        }
+                    }
                 }
             }
         }
         vec![]
+    }
+
+    fn put_word_v(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
+        let mut board = self.clone();
+        board.rows = cols_to_rows(&board.rows);
+        let (mut res, legal) = board.put_word(letters, row, start_cell);
+        res.rows = cols_to_rows(&res.rows);
+        (res, legal)
     }
 
     fn put_word(&self, letters: &[char], row: usize, start_cell: usize) -> (Board, bool) {
@@ -319,7 +343,7 @@ pub fn choose_n(letters: &Vec<char>, n: usize) -> Vec<Vec<char>> {
 }
 
 // Returns every permutation (ordering) of the given list
-// Removes duplicate orderings i.e. [a, b, b] will return
+// Removes duplicate orderings i.e. [a, b, b] will r]eturn
 //    [a, b, b], [b, a, b] and [b, b, a] only
 pub fn permutations(list: &Vec<char>) -> Vec<Vec<char>> {
     let len = list.len();
@@ -387,6 +411,18 @@ pub fn start_positions(row: &[Letter], word_size: usize) -> Vec<usize> {
     }
     res
 }
+
+pub fn cols_to_rows(cols: &[[Letter; 11]; 11]) -> [[Letter; 11]; 11] {
+    let mut rows = cols.clone();
+
+    for i in 0 .. cols.len(){
+        for j in 0 .. cols[i].len() {
+            rows[j][i] = cols[i][j];
+        }
+    }
+    rows
+}
+
 
 fn is_dl(i: usize, j: usize) -> bool {
     for tup in DL.iter() {
