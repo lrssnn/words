@@ -39,22 +39,29 @@ impl Board {
         }
     }
 
-    pub fn new_from_file(file: &str) -> Board {
+    pub fn new_from_file(file: &str) -> (Board, Vec<char>) {
         let mut file = File::open(file).unwrap();
 
         let mut string = String::new();
         file.read_to_string(&mut string);
 
         let mut res = Board::new();
+        let mut letters = vec![];
+        let mut lines = string.lines();
 
-        for (i, line) in string.lines().enumerate() {
+        for (i, line) in lines.enumerate() {
             for (j, c) in line.chars().enumerate() {
-                if c != '_' {
-                    res.place_unscored(i, j, c);
+                if i < 11 {
+                    if c != '_' {
+                        res.place_unscored(i, j, c);
+                    }
+                } else {
+                    letters.push(c);
                 }
             }
         }
-        res
+
+        (res, letters)
     }
 
     // Print with special tile indicators, only useful for 11x11
@@ -198,13 +205,17 @@ impl Board {
                         tripled    -= 1;
                     }
                     // Add to total
-                    score += word_score;
+                    if word.len() > 1 {
+                        score += word_score;
+                    }
                     word_score = 0;
 
                     // Spellcheck
                     if word.len() > 1 {
                         let valid = spellcheck.check(&word);
-                        //if valid {println!("Spellchecking '{}': {}", word, valid);}
+                        if word.len() > 3 {
+                            //if valid {println!("Spellchecking '{}': {}", word, valid);}
+                        }
                         if !valid {
                             return 0;
                         }
@@ -212,17 +223,14 @@ impl Board {
                     }
 
                 } else if letter.scored {
-                    letter.scored = false;
                     let mut letter_score = letter.score();
                     word.push(letter.letter.unwrap());
                     if letter.double { letter_score *= 2;}
                     if letter.triple { letter_score *= 3;}
                     if letter.dw { 
-                        letter.dw = false;
                         doubled += 1;
                     }
                     if letter.tw {
-                        letter.tw = false;
                         tripled += 1;
                     }
                     
@@ -271,17 +279,26 @@ impl Board {
                     // Add to total
                     score += word_score;
                     word_score = 0;
+                    // Spellcheck
+                    if word.len() > 1 {
+                        let valid = spellcheck.check(&word);
+                        if word.len() > 3 {
+                            //if valid {println!("Spellchecking '{}': {}", word, valid);}
+                        }
+                        if !valid {
+                            return 0;
+                        }
+                        word = String::new();
+                    }
                 } else if letter.scored {
-                    letter.scored = false;
                     let mut letter_score = letter.score();
+                    word.push(letter.letter.unwrap());
                     if letter.double { letter_score *= 2;}
                     if letter.triple { letter_score *= 3;}
                     if letter.dw { 
-                        letter.dw = false;
                         doubled += 1;
                     }
                     if letter.tw {
-                        letter.tw = false;
                         tripled += 1;
                     }
                     
@@ -302,7 +319,20 @@ impl Board {
             // Add to total
             score += word_score;
             word_score = 0;
+
+            // Spellcheck
+            if word.len() > 1 {
+                let valid = spellcheck.check(&word);
+                if word.len() > 3 {
+                    //if valid {println!("Spellchecking '{}': {}", word, valid);}
+                }
+                if !valid {
+                    return 0;
+                }
+                word = String::new();
+            }
         }
+        //self.print();
         score
     }
 

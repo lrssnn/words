@@ -6,28 +6,35 @@ use std::cmp::Ordering;
 use board::Board;
 
 fn main() {
-    let mut board = Board::new_from_file("board.dat");
-    board.print();
-    println!("{},{}", board.rows.len(), board.rows[0].len());
+    let (mut board, letters) = Board::new_from_file("board.dat");
     /*
-    board.place_unscored(4, 5, 'c');
-    board.place_unscored(10, 5, 'y');
-    board.place_unscored(8, 8, 'x');
+    board.print();
+    for l in letters {
+        print!("{} ", l);
+    }
+    println!("");
+    println!("{},{}", board.rows.len(), board.rows[0].len());
     */
-    
-    let letters = vec!['b', 't', 'q', 'i', 'o', 'e', 'x'];
     let mut moves = board.possible_moves(&letters);
     moves.sort_by(sort_moves);
-    //moves.reverse();
+    let len = moves.len();
+    let mut split = len;
+        println!("{}", len);
+    if len > 5 {
+        println!("{}", len);
+        split = 5;
+    }
+        
+    let mut moves = moves.split_off(len - split);
 
-    for &(board, score) in moves.iter().take(5){
+    for &(board, score) in moves.iter() {
         board.print();
         println!("Score: {}\n", score);
     }
 }
 
 fn sort_moves(a: &(Board, usize), b: &(Board, usize)) -> Ordering {
-    a.1.cmp(&b.1).reverse()
+    a.1.cmp(&b.1)
 }
     
 
