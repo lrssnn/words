@@ -1,8 +1,13 @@
 #![allow(needless_range_loop)]
 use std::fs::File;
 use std::io::Read;
+use std::io::Write;
+use std::io;
 use std::fmt;
 use std::clone::Clone;
+
+use super::letter;
+use letter::Letter;
 
 extern crate hunspell;
 use self::hunspell::Hunspell;
@@ -25,100 +30,6 @@ pub struct Board {
     pub rows: [[Letter; 11]; 11],
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Letter {
-    letter: Option<char>, // The letter
-    scored: bool,         // Letter is new and should be scored
-    double: bool,         // Letter should be scored double
-    triple: bool,         // Letter should be scored triple
-    dw:     bool,         // Letter placed on double word tile
-    tw:     bool,         // Letter placed on triple word tile
-}
-
-impl fmt::Display for Letter {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, ".{}.", self.letter.unwrap_or('_'))
-    }
-}
-
-impl Letter {
-    
-    pub fn new(letter: char) -> Letter {
-        Letter {
-            letter: Some(letter),
-            scored: true,
-            double: false,
-            triple: false,
-            dw:     false,
-            tw:     false,
-        }
-    }
-
-    pub fn new_unscored(letter: char) -> Letter {
-        Letter {
-            letter: Some(letter),
-            scored: false,
-            double: false,
-            triple: false,
-            dw:     false,
-            tw:     false,
-        }
-    }
-
-    pub fn blank() -> Letter {
-        Letter {
-            letter: None,
-            scored: false,
-            double: false,
-            triple: false,
-            dw:     false,
-            tw:     false,
-        }
-    }
-
-    pub fn is_blank(&self) -> bool {
-        self.letter.is_none()
-    }
-
-    pub fn score(&self) -> usize {
-
-        let letter = match self.letter {
-            Some(c) => c,
-            None    => return 0,
-        };
-
-        match letter {
-            'a' => 1,
-            'b' => 4,
-            'c' => 4,
-            'd' => 2,
-            'e' => 1,
-            'f' => 4,
-            'g' => 3,
-            'h' => 3,
-            'i' => 1,
-            'j' => 10,
-            'k' => 5,
-            'l' => 2,
-            'm' => 4,
-            'n' => 2,
-            'o' => 1,
-            'p' => 4,
-            'q' => 10,
-            'r' => 1,
-            's' => 1,
-            't' => 1,
-            'u' => 2,
-            'v' => 5,
-            'w' => 4,
-            'x' => 8,
-            'y' => 3,
-            'z' => 10,
-            _  => 0,
-        }
-    }
-}
-
 
 impl Board {
 
@@ -126,6 +37,24 @@ impl Board {
         Board {
             rows: [[Letter::blank(); 11]; 11]
         }
+    }
+
+    pub fn new_from_file(file: &str) -> Board {
+        let mut file = File::open(file).unwrap();
+
+        let mut string = String::new();
+        file.read_to_string(&mut string);
+
+        let mut res = Board::new();
+
+        for (i, line) in string.lines().enumerate() {
+            for (j, c) in line.chars().enumerate() {
+                if c != '_' {
+                    res.place_unscored(i, j, c);
+                }
+            }
+        }
+        res
     }
 
     // Print with special tile indicators, only useful for 11x11
@@ -138,6 +67,7 @@ impl Board {
                 };
                 if c == '_' {
                     // Check for multiplier tiles
+                    /*
                     if i == 5 && j == 5 {
                         print!("_*_");
                     } else if is_dl(i, j) {
@@ -151,7 +81,8 @@ impl Board {
                     } else {
                         print!("_{}_", ' ');
                     }
-                    //print!("_{}_", '_');
+                    */
+                    print!("_{}_", '_');
                 } else {
                     if letter.scored {
                         print!("*{}*", c);
@@ -192,19 +123,24 @@ impl Board {
         // So lets start with one letter words which will just be putting them adjacent
         //  to letters
         let mut result = vec![];
+        let spell = Hunspell::new("en_GB.aff", "en_GB.dic");
+        let mut checks = 0;
         for word_length in 1..letters.len() + 1 {
             println!("Word Length: {}", word_length);
             for letter_selection in choose_n(letters, word_length) {
-                println!("Letters: {:?}", letter_selection);
+                //println!("Letters: {:?}", letter_selection);
                 for perm in permutations(&letter_selection) {
-                    println!("Perm: {:?}", perm);
+                    //println!("Perm: {:?}", perm);
                     // Here is where we want to look at both rows and columns
                     for (row_num, row) in self.rows.iter().enumerate() {
-                        println!("----");
+                        //println!("{}", row_num);
+                        //println!("----");
                         for start_cell in start_positions(row, word_length) {
+                            //println!("{},{}", row_num, start_cell);
                             let (mut opt, legal) = self.put_word(&perm, row_num, start_cell);
                             if legal {
-                                let score = opt.score();
+                                checks += 1; 
+                                let score = opt.score(&spell);
                                 result.push((opt, score));
                             }
                         }
@@ -215,29 +151,32 @@ impl Board {
                     }
 
                     for (col_num, col) in cols_to_rows(&self.rows).iter().enumerate() {
-                        println!("----");
+                        //println!("----");
                         for start_cell in start_positions(col, word_length) {
                             let (mut opt, legal) = self.put_word_v(&perm, col_num, start_cell);
                             if legal {
-                                let score = opt.score();
+                                let score = opt.score(&spell);
                                 result.push((opt, score));
                             }
                         }
                     }
                 }
+                print!("\rChecks: {}", checks);
+                io::stdout().flush();
             }
+            checks = 0;
+            println!("");
         }
         result
     }
 
-    pub fn score(&mut self) -> usize {
+    pub fn score(&mut self, spellcheck: &Hunspell) -> usize {
 
         let mut score = 0;
         let mut word_score = 0;
         let mut doubled = 1;
         let mut tripled = 1;
 
-        let spellcheck = Hunspell::new("en_GB.aff", "en_GB.dic");
         let mut word = String::new();
 
         for row in &mut self.rows {
@@ -260,7 +199,7 @@ impl Board {
                     // Spellcheck
                     if word.len() > 1 {
                         let valid = spellcheck.check(&word);
-                        println!("Spellchecking '{}': {}", word, valid);
+                        if valid {println!("Spellchecking '{}': {}", word, valid);}
                         if !valid {
                             return 0;
                         }
@@ -302,7 +241,7 @@ impl Board {
 
             if word.len() > 1 {
                 let valid = spellcheck.check(&word);
-                println!("Spellchecking '{}': {}", word, valid);
+                        if valid {println!("Spellchecking '{}': {}", word, valid);}
                 if !valid {
                     return 0;
                 }
@@ -581,7 +520,6 @@ pub fn cols_to_rows(cols: &[[Letter; 11]; 11]) -> [[Letter; 11]; 11] {
     rows
 }
 
-
 fn is_dl(i: usize, j: usize) -> bool {
     for tup in &DL {
         let &(row, col) = tup;
@@ -620,4 +558,9 @@ fn is_tw(i: usize, j: usize) -> bool {
         }
     }
     false
+}
+
+fn dot() {
+    print!(".");
+    io::stdout().flush();
 }
