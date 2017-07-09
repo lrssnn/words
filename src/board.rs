@@ -141,7 +141,9 @@ impl Board {
                             if legal {
                                 checks += 1; 
                                 let score = opt.score(&spell);
-                                result.push((opt, score));
+                                if score > 0 {
+                                    result.push((opt, score));
+                                }
                             }
                         }
                     }
@@ -155,8 +157,11 @@ impl Board {
                         for start_cell in start_positions(col, word_length) {
                             let (mut opt, legal) = self.put_word_v(&perm, col_num, start_cell);
                             if legal {
+                                checks += 1;
                                 let score = opt.score(&spell);
-                                result.push((opt, score));
+                                if score > 0 {
+                                    result.push((opt, score));
+                                }
                             }
                         }
                     }
@@ -199,7 +204,7 @@ impl Board {
                     // Spellcheck
                     if word.len() > 1 {
                         let valid = spellcheck.check(&word);
-                        if valid {println!("Spellchecking '{}': {}", word, valid);}
+                        //if valid {println!("Spellchecking '{}': {}", word, valid);}
                         if !valid {
                             return 0;
                         }
@@ -241,7 +246,7 @@ impl Board {
 
             if word.len() > 1 {
                 let valid = spellcheck.check(&word);
-                        if valid {println!("Spellchecking '{}': {}", word, valid);}
+                        //if valid {println!("Spellchecking '{}': {}", word, valid);}
                 if !valid {
                     return 0;
                 }

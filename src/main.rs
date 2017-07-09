@@ -18,9 +18,9 @@ fn main() {
     let letters = vec!['b', 't', 'q', 'i', 'o', 'e', 'x'];
     let mut moves = board.possible_moves(&letters);
     moves.sort_by(sort_moves);
+    //moves.reverse();
 
-
-    for &(board, score) in moves.iter(){
+    for &(board, score) in moves.iter().take(5){
         board.print();
         println!("Score: {}\n", score);
     }
